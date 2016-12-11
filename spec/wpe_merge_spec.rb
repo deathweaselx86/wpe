@@ -48,9 +48,9 @@ RSpec.describe WpeMerge do
                            "spec/fixtures/nonexistent_output.csv") }.to raise_error(RuntimeError) 
     end
 
-    it "errors if the output file exists already" do
+    it "errors if the output file directory cannot be written to" do
       expect { WpeMerge.new("spec/fixtures/happy_input.csv",
-                            "spec/fixtures/happy_output.csv") }.to raise_error(RuntimeError)
+                            "/output.csv") }.to raise_error(RuntimeError)
     end
   end
 end
