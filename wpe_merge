@@ -1,0 +1,3 @@
+#!/bin/bash
+
+ruby wpe_merge.rb $1 $2

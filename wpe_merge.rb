@@ -1,15 +1,3 @@
-# what are we doing here?
-# invoked by wpe_merge.rb path/to/input.csv path/to/output.csv
-# given an input  comma separated CSV with a header row Account ID, Account Name, First Name, Created On
-# and a RESTful status API at http://interview.wpengine.io/v1/accounts/{id}
-# that returns information in JSON format
-# {"account_id" : 12345,
-#  "status": "good",
-#  "created_on": "2011-01-12" }
-#
-#  for each row of the input CSV, pull the account id,
-#  call the RESTful API, merge the data from the API with the data in the input CSV, and create
-#  an output CSV with the columns Account ID, First Name, Created On, Status, and Status Set On
 require "csv"
 require "date"
 require "httparty"
@@ -25,7 +13,8 @@ class WpeMerge
     validate_output_file output_filepath
     
     configure_csv
-    @output_csv = CSV.open(output_filepath, "w", headers: OUTPUT_HEADER)
+    @output_csv = CSV.open(output_filepath, "w", 
+                           write_headers: true, headers: OUTPUT_HEADER)
     
     # It's much more performant to stream this file rather than opening it
     # and putting its contents in memory so we will do it this way.
@@ -33,18 +22,21 @@ class WpeMerge
   end
 
   def merge
-    # Open input file
-    CSV.foreach(@input_file, headers: true, converters: "Created On") do |row|
-      output_row = process_row(row)
-      @output_csv << output_row
-    end
-    @output_csv.close 
+    begin
+      CSV.foreach(@input_file, headers: true, skip_blanks: true, converters: "Created On") do |row|
+        output_row = process_row(row)
+        @output_csv << output_row unless output_row.nil?
+      end
+    rescue ArgumentError
+      raise RuntimeError, "Invalid input CSV file." 
+    ensure
+      @output_csv.close
+    end 
   end
 
   def process_row(row)
-    nil_row = [nil, nil, nil, nil, nil]
     account_id, account_name, first_name, created_on = row[0], row[1], row[2], row[3]
-    return nil_row if account_id.nil?
+    return nil if account_id.nil? || first_name.nil? || created_on.nil?
     response = get_response_for_account account_id
     [account_id, first_name, created_on, response["status"], response["created_on"]]
   end
@@ -56,22 +48,19 @@ class WpeMerge
     if resp.response.is_a? Net::HTTPOK
       resp.parsed_response
     elsif resp.response.is_a? Net::HTTPNotFound
-      # I guess it's ok to silently fail on a 404
-      {"status": "not found", "created on": nil}
+      {"status"=> "not found", "created_on"=> nil}
     else
       STDERR.puts "Request to #{wpe_uri} resulted in a #{resp.response.code} status code."
-      {"status": "api error", "created on": nil}
+      {"status"=> "api error", "created_on"=> nil}
     end
   end
 
   private
   
   def configure_csv
-    # Automatically convert the created on field to a date object so we can convert it 
-    # to the format we need it to be in 
-    # TODO: Figure out what the final date format should be
+    # Convert input date so the dates in our output file will be consistent.
     CSV::Converters["Created On"] = lambda do |field|
-      Date.strptime(field, "%m/%d/%Y") rescue field
+      Date.strptime(field, "%m/%d/%y") rescue field
     end
   end
 
@@ -81,7 +70,7 @@ class WpeMerge
 
   def validate_output_file(output_filepath)
     output_directory = get_parent_directory output_filepath
-    raise RuntimeError, "Output file cannot be written" unless File.writable? output_directory
+    raise RuntimeError, "Output file cannot be written." unless File.writable? output_directory
   end
 
   def get_parent_directory(filepath)
@@ -93,6 +82,7 @@ end
 
 
 # Is this being run as a script?
+# This is here so we can require this file for testing.
 if __FILE__ == $0
   WpeMerge.new(*ARGV).merge
 end
