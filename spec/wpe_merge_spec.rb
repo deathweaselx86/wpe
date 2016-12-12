@@ -32,16 +32,43 @@ RSpec.describe WpeMerge do
   end
 
   describe "#merge" do
+    let(:lex_output){ ["12345","Lex","2011-1-12","good","2011-01-12"] }
+    let(:victor_output){ ["8172","Victor","2014-11-19","closed","2015-09-01"] }
     it "errors if the input file is not a CSV" do
       merger = WpeMerge.new("spec/fixtures/baby-alligator.jpg",
-                            "spec/fixtures/bar.csv")
-       expect { merger.merge }.to raise_error(RuntimeError, "Invalid input CSV file.")
+                            "spec/fixtures/foo.csv")
+      expect { merger.merge }.to raise_error(RuntimeError, "Invalid input CSV file.")
     end
 
-    it "errors if the input file is not a CSV" do
+    it "errors if the input file is not encoded in UTF-8" do
       merger = WpeMerge.new("spec/fixtures/latin1.csv",
-                            "spec/fixtures/bar.csv")
+                            "spec/fixtures/foo.csv")
       expect { merger.merge }.to raise_error(RuntimeError, "Invalid input CSV file.")
+    end
+
+    it "errors if the input file is malformed" do
+      merger = WpeMerge.new("spec/fixtures/malformed.csv",
+                            "spec/fixtures/foo.csv")
+      expect { merger.merge }.to raise_error(CSV::MalformedCSVError)
+    end
+    
+    it "puts output in the output csv" do
+      headers = ["Account ID", "Account Name", "First Name", "Created On"]
+      expect_any_instance_of(WpeMerge).to receive(:process_row).
+        with(CSV::Row.new(headers, ["12345","lexcorp","Lex", 
+                                    Date.strptime("1/12/11", "%m/%d/%y")])).
+        and_return(lex_output)
+      expect_any_instance_of(WpeMerge).to receive(:process_row).
+        with(CSV::Row.new(headers,["8172","⌀⌁⌂⌃⌄⌅⌆⌇","Victor", 
+                                   Date.strptime("11/19/14", "%m/%d/%y")])).
+        and_return(victor_output)
+      
+      merger = WpeMerge.new("spec/fixtures/happy_input.csv",
+                           "spec/fixtures/foo.csv")
+      merger.merge
+      output  = CSV.open("spec/fixtures/foo.csv")
+      contents = output.read
+      expect(contents).to include(lex_output, victor_output)
     end
   end
 

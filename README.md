@@ -1,27 +1,32 @@
 # WP Engine Coding Exercise
 
 This code takes an input CSV with some account information, uses it to gather more 
-information from an API, and merges the information in an output. 
-It's written with POSIX systems in mind.
+information from a WP Engine API, and merges the resulting information in an output CSV. 
 
 
 ## Technologies
-Ruby :) This should work with any version of Ruby > 2.0. It was written 
-using ruby 2.2 on OS X El Capitan.
+Ruby 2.2 (but should work on version 2.0 or greater)
+
+Gems:
+* csv (for CSV parsing)
+* httparty (HTTP client)
+* rspec (for testing)
+* webmock (for HTTP stubbing)
+
+This was built using OS X El Capitan.
 
 ## Building
-1. Ruby should come with your Linux/OS X machine.
+Ruby should come with most Linux distributions and OS X.
 1. `gem install bundler`
 1. `bundle install`
+
 You're done!
 
 ## Testing
-`bundle exec rspec`
-This will only work from the source root.
+After installation, run `bundle exec rspec` from the source root.
 
-## Running it
+## Running
 
 `./wpe_merge <input_file> <output_file>`
 
-Your input CSV should be in UTF-8 format and your need to be able to 
-write to wherever you're putting the output file.
+Your input CSV should be comma delimited and in UTF-8 format.
