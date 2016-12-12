@@ -1,28 +1,6 @@
 require 'spec_helper'
 require_relative '../wpe_merge'
 
-# Things to test:
-# For all paths:
-#   1. Output header is correct
-#   2. Expected information is present
-#   3. Does not throw errors
-#   4. Does not overwrite existing files
-#
-# For path where API is not available
-#   1. Fails gracefully (how should it fail? what if it's intermittent?)
-#
-# For path where CSV has rows with missing data
-#   1. Handles those gracefully (should it fail the whole thing? skip that row?)
-#
-# For path where CSV has rows corresponding to accounts that do not exist
-#   1. Handles that (print doesn't exist? how to handle that?)
-#
-# For path where CSV has encoding issues
-#   1. Handles that somehow (Do we know if we'll have encoding issues? Will it always be UTF-8?)
-#
-#
-
-
 RSpec.describe WpeMerge do
   describe "initialize" do
     it "errors with too few arguments" do
