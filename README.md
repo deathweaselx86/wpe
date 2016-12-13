@@ -17,6 +17,7 @@ This was built using OS X El Capitan.
 
 ## Building
 Ruby should come with most Linux distributions and OS X.
+
 1. `gem install bundler`
 1. `bundle install`
 
